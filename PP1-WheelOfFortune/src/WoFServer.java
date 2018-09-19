@@ -32,7 +32,6 @@ public class WoFServer {
         while (true) {
             receivedSerializedData = snu.getSerializedGameData();
             snu.serverPrint();
-            // serializedGameData = processGameData(receivedSerializedData, secret, wordMap);
             serializedGameData = new GameData(receivedSerializedData);
             
             // Player has decide to quit the game --> Sadboi
@@ -49,16 +48,12 @@ public class WoFServer {
                 serializedGameData.setMessage("");
 
                 // Reset the word
-                char[] chars = new char[secret.length()];
-                Arrays.fill(chars, '-');
-                serializedGameData.setWord(new String(chars));
+                serializedGameData.setWord(setBlankSecretWord(secret.length()));
 
                 System.out.println("Starting the game with word: " + secret + "\n");
             }
             else if (serializedGameData.getWord().equals("")) {
-                char[] chars = new char[secret.length()];
-                Arrays.fill(chars, '-');
-                serializedGameData.setWord(new String(chars));
+                serializedGameData.setWord(setBlankSecretWord(secret.length()));
             }
             // Player has not guessed the word --> Process guess and return
             else {
@@ -66,6 +61,7 @@ public class WoFServer {
                 System.out.println("Player guessed: " + guess.toString());
                 serializedGameData.setCharInWord(guess, wordMap.get(guess));
                 System.out.println("Word is now set to: " + serializedGameData.getWord());
+                
                 serializedGameData.removeLetter(guess);
                 if (!serializedGameData.getWord().contains("-")) {
                     serializedGameData.setMessage("You WIN!!!!");
@@ -95,5 +91,11 @@ public class WoFServer {
             mapping.get(word[i]).add(i);
         }
         return mapping;
+    }
+
+    private static String setBlankSecretWord(int length) {
+        char[] chars = new char[length];
+        Arrays.fill(chars, '-');
+        return new String(chars);
     }
 }

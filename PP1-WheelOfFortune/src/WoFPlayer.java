@@ -10,6 +10,7 @@ public class WoFPlayer {
         ArrayList<String> wordList = new ArrayList<String>();
         BufferedReader fromKeyboard = new BufferedReader(new InputStreamReader(System.in));
 
+        // Get connection info
         System.out.println("Enter IP Address: ");
         String ip = fromKeyboard.readLine();
         InetAddress serverAddress = InetAddress.getByName(ip);
@@ -19,6 +20,7 @@ public class WoFPlayer {
         PlayerNetworkUtils pnu = new PlayerNetworkUtils(serverAddress, port);
         pnu.createClientSocket();
 
+        // Start up the game
         System.out.println("Enter your name: ");
         String name = fromKeyboard.readLine();
         System.out.println("Name: " + name);
@@ -33,13 +35,13 @@ public class WoFPlayer {
                 System.out.println("CONGRATS! You got it!");
                 System.out.println("It took you " + toReceive.getNumberOfGuesses() + " to guess the word!");
                 wordList.add(toReceive.getWord());  // Add word to list for tracking
+                
                 innerLoop:
                 while (true) {
                     System.out.println("Do you want to play another game? (Y/N): ");
                     String ans = fromKeyboard.readLine().toUpperCase();
                     if (ans.equals("N")) { break mainLoop; }  // Break to main loop
                     else if (ans.equals("Y")) {
-                        // toSend = startGame(pnu, fromKeyboard);
                         GameData restartData = new GameData(name);
                         restartData.setMessage("restart");
         
@@ -59,6 +61,7 @@ public class WoFPlayer {
             System.out.println("Guess a letter: ");
             String playerInput = fromKeyboard.readLine();
             toSend = new GameData(toReceive);
+
             if (playerInput.length() > 1 && playerInput.equals("exit")) {
                 toSend.setMessage(playerInput);
                 pnu.sendSerializedGameData(toSend);
