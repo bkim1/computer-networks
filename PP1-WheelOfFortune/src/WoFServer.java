@@ -27,19 +27,53 @@ public class WoFServer {
         System.out.println("Enter secret word: ");
         String secret = fromKeyboard.readLine().toLowerCase(); // Ensure it is all lowercase
         wordMap = setWordMapping(secret);
-        System.out.println("Starting the game with word: " + secret);
+        System.out.println("Starting the game with word: " + secret + "\n");
 
         while (true) {
             receivedSerializedData = snu.getSerializedGameData();
             snu.serverPrint();
-            serializedGameData = processGameData(receivedSerializedData, secret, wordMap);
-            if (serializedGameData == null) {
+            // serializedGameData = processGameData(receivedSerializedData, secret, wordMap);
+            serializedGameData = new GameData(receivedSerializedData);
+            
+            // Player has decide to quit the game --> Sadboi
+            if (serializedGameData.getMessage().equals("exit") ||
+                     serializedGameData.getMessage().equals("restart")) {
+                // Get new secret word
+                System.out.println("\n-----------------");
                 System.out.println("Restarting a new game...");
                 System.out.println("Enter secret word: ");
                 secret = fromKeyboard.readLine();
                 wordMap = setWordMapping(secret);
-                continue;
+
+                // Reset the message to not trigger game restart
+                serializedGameData.setMessage("");
+
+                // Reset the word
+                char[] chars = new char[secret.length()];
+                Arrays.fill(chars, '-');
+                serializedGameData.setWord(new String(chars));
+
+                System.out.println("Starting the game with word: " + secret + "\n");
             }
+            else if (serializedGameData.getWord().equals("")) {
+                char[] chars = new char[secret.length()];
+                Arrays.fill(chars, '-');
+                serializedGameData.setWord(new String(chars));
+            }
+            // Player has not guessed the word --> Process guess and return
+            else {
+                Character guess = serializedGameData.getGuess();
+                System.out.println("Player guessed: " + guess.toString());
+                serializedGameData.setCharInWord(guess, wordMap.get(guess));
+                System.out.println("Word is now set to: " + serializedGameData.getWord());
+                serializedGameData.removeLetter(guess);
+                if (!serializedGameData.getWord().contains("-")) {
+                    serializedGameData.setMessage("You WIN!!!!");
+                }
+                serializedGameData.incrementGuesses();
+                System.out.println("Number of guesses: " + serializedGameData.getNumberOfGuesses());
+            }
+
             snu.sendSerializedGameData(serializedGameData);
         }
     }
@@ -61,29 +95,5 @@ public class WoFServer {
             mapping.get(word[i]).add(i);
         }
         return mapping;
-    }
-
-    private static GameData processGameData(GameData data, String secret, HashMap<Character, ArrayList<Integer>> wordMap) {
-        // Start of Game --> Initialize response with secret word
-        if (data.getWord().equals("")) {
-            char[] chars = new char[secret.length()];
-            Arrays.fill(chars, '-');
-            data.setWord(new String(chars));
-        }
-        // Player has decide to quit the game --> Sadboi
-        else if (data.getWord().equals("exit")) {
-            data = null;
-        }
-        // Player has not guessed the word --> Process guess and return
-        else {
-            Character guess = data.getGuess();
-            data.setCharInWord(guess, wordMap.get(guess));
-            data.removeLetter(guess);
-            if (!data.getWord().contains("-")) {
-                data.setMessage("You WIN!!!!");
-            }
-            data.incrementGuesses();
-        }
-        return data;
     }
 }

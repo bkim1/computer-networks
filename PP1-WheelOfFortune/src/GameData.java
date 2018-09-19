@@ -26,10 +26,18 @@ public class GameData implements Serializable {
         this.letters = l;
         this.numGuesses = n;
     }
-    
+    public GameData(GameData g) {
+        this.player = g.getPlayer();
+        this.currentWord = g.getWord();
+        this.message = g.getMessage();
+        this.guess = g.getGuess();
+        this.letters = g.getLetters();
+        this.numGuesses = g.getNumberOfGuesses();
+    }
     public GameData(String p) {
         this.player = p;
         this.currentWord = "";
+        this.message = "";
         this.letters = new ArrayList<>();
         this.numGuesses = 0;
 

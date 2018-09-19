@@ -1,16 +1,8 @@
-import java.net.DatagramSocket;
-import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 public class WoFPlayer {
     public static void main (String[] args) throws IOException, ClassNotFoundException {
@@ -27,55 +19,71 @@ public class WoFPlayer {
         PlayerNetworkUtils pnu = new PlayerNetworkUtils(serverAddress, port);
         pnu.createClientSocket();
 
-        toSend = startGame(pnu, fromKeyboard);
-        System.out.println("Received for start of game!");
-        System.out.println(toSend.getWord());
+        System.out.println("Enter your name: ");
+        String name = fromKeyboard.readLine();
+        System.out.println("Name: " + name);
+        GameData data = new GameData(name);
+        
+        pnu.sendSerializedGameData(data);
+        
         mainLoop:  // Label for breaking out of play again repeats
         while (true) {
-            if (toSend != null && toSend.getMessage().contains("WIN")) {
+            toReceive = pnu.getSerializedGameData();
+            if (toReceive != null && toReceive.getMessage().contains("WIN")) {
                 System.out.println("CONGRATS! You got it!");
-                System.out.println("It took you " + toSend.getNumberOfGuesses() + " to guess the word!");
-                wordList.add(toSend.getWord());  // Add word to list for tracking
+                System.out.println("It took you " + toReceive.getNumberOfGuesses() + " to guess the word!");
+                wordList.add(toReceive.getWord());  // Add word to list for tracking
+                innerLoop:
                 while (true) {
                     System.out.println("Do you want to play another game? (Y/N): ");
                     String ans = fromKeyboard.readLine().toUpperCase();
                     if (ans.equals("N")) { break mainLoop; }  // Break to main loop
                     else if (ans.equals("Y")) {
-                        toSend = startGame(pnu, fromKeyboard);
-                        break;
+                        // toSend = startGame(pnu, fromKeyboard);
+                        GameData restartData = new GameData(name);
+                        restartData.setMessage("restart");
+        
+                        pnu.sendSerializedGameData(restartData);
+                        System.out.println("Waiting for server to restart game");
+                        toReceive = pnu.getSerializedGameData();
+                        break innerLoop;
                     }
                     else {
                         System.out.println("Incorrect input. Please try again.");
                     }
                 }
-                continue; // Player wants to play again --> Continue loop
             }
-            System.out.println("Available letters: " + toSend.getLetters());
+            System.out.println(toReceive.getWord());
+            System.out.println("Current number of guesses: " + toReceive.getNumberOfGuesses());
+            System.out.println("Available letters: " + toReceive.getLetters());
             System.out.println("Guess a letter: ");
             String playerInput = fromKeyboard.readLine();
-
+            toSend = new GameData(toReceive);
             if (playerInput.length() > 1 && playerInput.equals("exit")) {
                 toSend.setMessage(playerInput);
+                pnu.sendSerializedGameData(toSend);
+                break;
             }
             else if (playerInput.length() > 1) {
-                System.out.println("Only a single letter is allowed. Please try again.");
-                continue;
+                System.out.println("Only a single letter is allowed. Please try again.\n");
+                while (true) {
+                    System.out.println("Current number of guesses: " + toReceive.getNumberOfGuesses());
+                    System.out.println("Available letters: " + toReceive.getLetters());
+                    System.out.println("Guess a letter: ");
+                    playerInput = fromKeyboard.readLine();
+                    if (playerInput.length() == 1) { break; }
+                }
             }
+            // Set the guess
+            Character ch = Character.valueOf(playerInput.charAt(0));
+            toSend.setGuess(ch);
+            
             pnu.sendSerializedGameData(toSend);
          }
+
+         // Close out the game for the player
+         System.out.println("Thanks for playing " + name + "!");
          System.out.println("Here are all the words you guessed: " + wordList.toString());
          pnu.closeSocket();
-    }
-
-    private static GameData startGame(PlayerNetworkUtils pnu, BufferedReader r) throws IOException, ClassNotFoundException {
-        System.out.println("Enter your name: ");
-        String name = r.readLine();
-        System.out.println("Name: " + name);
-        GameData data = new GameData(name);
-        
-        pnu.sendSerializedGameData(data);
-        GameData received = pnu.getSerializedGameData();
-        System.out.println("Received data!");
-        return received;
-    }
+    } 
 }
