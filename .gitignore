@@ -3,7 +3,7 @@
 .vscode
 .recommenders
 
-
+.DS_Store
 */.DS_Store
 */.classpath
 */.gitignore
