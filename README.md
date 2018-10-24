@@ -1,4 +1,4 @@
-# computer-networks
+# CSCI3363 - Computer Networks Programming Projects
 
 ---
 
@@ -8,9 +8,18 @@ Professor: Robert Signorile
 
 --- 
 
-Programming Projects:
+## Programming Projects:
 
-1. Wheel of Fortune
-2. File Transfer
-3. Tic Tac Toe
+### Programming Project 1
 
+Wheel of Fortune
+
+
+### Programming Project 2
+
+File Transfer
+
+
+### Programming Project 3
+
+Tic-Tac-Toe
