@@ -13,6 +13,12 @@ public class GameUtils {
             else { data.removeP2Move(move.getMove()); }
 
             data.switchTurn();
+            data.incrementMoves();
+
+            if (data.getNumberOfMoves() == 9) {
+                data.tieGame(); 
+                data.gameOver();
+            }
 
             return data;
         }
@@ -38,8 +44,13 @@ public class GameUtils {
             valid = move.getMove() % 2 != 0;
         }
 
+        try {
+            valid = valid && data.getBoard()[move.getRow()][move.getCol()] == 0;
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
 
-        return valid && board[move.getRow()][move.getCol()] == 0;
+        return valid;
     }
 
     public boolean checkForWin(GameData gd) {
