@@ -2,41 +2,71 @@
 
 public class GameUtils {
 
-    public int[][] initializeBoard() {
-        int[][] board = new int[3][3];
+    public GameData applyMove(GameData data, GameMove move) {
+        if (validMove(data, move)) {
+            int[][] board = data.getBoard();
+            board[move.getRow()][move.getCol()] = move.getMove();
+            data.setBoard(board);
+            data.setMove(move);
+            
+            if (data.isP1Turn()) { data.removeP1Move(move.getMove()); }
+            else { data.removeP2Move(move.getMove()); }
 
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board.length; j++) {
-                board[i][j] = 0;
-            }
+            data.switchTurn();
+
+            return data;
         }
-        return board;
+        else { return null; }
     }
 
-    public boolean validMove(int[][] board, GameMove move) {
-        return board[move.getRow()][move.getCol()] == 0;
+    public int[][] initializeBoard() {
+        return new int[3][3];
     }
 
-    public boolean checkForWin(int[][] board, GameMove move) {
+    public boolean validMove(GameData data, GameMove move) {
+        boolean valid = false;
+        if (data.isP1Turn() && !data.isP1Odd()) {
+            valid = move.getMove() % 2 == 0;
+        }
+        else if (data.isP1Turn() && data.isP1Odd()) {
+            valid = move.getMove() % 2 != 0;
+        }
+        else if (data.isP1Odd()) {
+            valid = move.getMove() % 2 == 0;
+        }
+        else {
+            valid = move.getMove() % 2 != 0;
+        }
+
+
+        return valid && board[move.getRow()][move.getCol()] == 0;
+    }
+
+    public boolean checkForWin(GameData gd) {
+        boolean winner = false;
+        GameMove move = gd.getMove();
+        int[][] board = gd.getBoard();
         // If true --> Need to check diagonal, horizontal, and vertical
         // Means that its in one of the corners
         if ((move.getRow() == 0 || move.getRow() == board.length - 1)
                 && (move.getCol() == 0 || move.getCol() == board.length - 1)) {
             
-            return checkHorizontal(board, move) || checkVertical(board, move) ||
+            winner = checkHorizontal(board, move) || checkVertical(board, move) ||
                 checkDiagonal(board, move, false);
         }
         // Move was placed in center of board
-        else if (Math.floor(board.length / 2) == move.getRow() &&
-                Math.floor(board.length / 2) == move.getCol()) {
+        else if (Math.floor(board.length / 2) == move.getRow()
+                && Math.floor(board.length / 2) == move.getCol()) {
             
-            return checkHorizontal(board, move) || checkVertical(board, move) ||
+            winner = checkHorizontal(board, move) || checkVertical(board, move) ||
                 checkDiagonal(board, move, true);
         }
         // Only have to check vertically and horizontally
         else {
-            return checkHorizontal(board, move) || checkVertical(board, move);
+            winner = checkHorizontal(board, move) || checkVertical(board, move);
         }
+        if (!winner && gd.getNumberOfMoves() == 9) { return false; }
+        return winner;
     }
 
     private boolean checkHorizontal(int[][] board, GameMove move) {
@@ -78,19 +108,19 @@ public class GameUtils {
     }
 
     public static String printBoard(int[][] board) {
-        String boardRep = "";
+        String boardRep = " ";
 
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board.length; j++) {
                 if (j == board.length -1) {
-                    boardRep += " " + board[i][j];
+                    boardRep += board[i][j];
                 }
                 else {
                     boardRep += board[i][j] + " | ";
                 }
             }
             if (i != board.length - 1) {
-                boardRep += "\n---------";
+                boardRep += "\n----------\n ";
             }
         }
         return boardRep;

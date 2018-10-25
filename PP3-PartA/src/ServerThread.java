@@ -20,22 +20,35 @@ public class ServerThread implements Runnable {
 
 	public void run() {
         GameUtils gu = new GameUtils();
-        GameData rcvData;
+        GameData toReceive, toSend;
 
+        System.out.println(Thread.currentThread().getName() + " is running...");
         try {
             while (true) {
-                rcvData = getData();
+                toReceive = getData();
 
-                System.out.println("Game Data:\n" + rcvData.toString());
+                System.out.println("Game Data:\n" + toReceive.toString());
 
-                
+                toSend = new GameData(toReceive);
+                toSend.incrementMoves();
+
+                sendData(toSend);
+                break;
             }
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
+
+        System.out.println("Closing out server!");
+        try {
+			this.socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
-    private GameData getData() throws ClassNotFoundException {
+    private GameData getData() throws IOException, ClassNotFoundException {
+    	GameData toReceive = null;
         InputStream is = this.socket.getInputStream();  
         ObjectInputStream ois = new ObjectInputStream(is);  
         toReceive = (GameData) ois.readObject();
@@ -43,7 +56,7 @@ public class ServerThread implements Runnable {
         return toReceive;
     }
 
-    private void sendData(GameData gd) {
+    private void sendData(GameData gd) throws IOException {
         OutputStream os = this.socket.getOutputStream();  
         ObjectOutputStream oos = new ObjectOutputStream(os);  
         oos.writeObject(gd);
