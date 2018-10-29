@@ -6,11 +6,6 @@ public class ServerThread implements Runnable {
 	Socket socket;
 	InputStream recvStream;
 	OutputStream sendStream;
-	String request;
-
-	// protected DatagramSocket socket = null;
-	protected BufferedReader in = null;
-	protected boolean moreQuotes = true;
 
 	public ServerThread(Socket clntSock) throws IOException {
 		this.socket = clntSock;

@@ -57,6 +57,8 @@ public class GameUtils {
         boolean winner = false;
         GameMove move = gd.getMove();
         int[][] board = gd.getBoard();
+
+        if (move == null) { return false; }
         // If true --> Need to check diagonal, horizontal, and vertical
         // Means that its in one of the corners
         if ((move.getRow() == 0 || move.getRow() == board.length - 1)
@@ -131,7 +133,7 @@ public class GameUtils {
                 }
             }
             if (i != board.length - 1) {
-                boardRep += "\n----------\n ";
+                boardRep += "\n ----------\n ";
             }
         }
         return boardRep;

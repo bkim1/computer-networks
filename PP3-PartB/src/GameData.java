@@ -5,7 +5,6 @@ import java.util.Arrays;
 public class GameData implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String playerName;
     private int[][] board;
     private GameMove move; 
     private boolean isEnd, p1Turn, p1Odd, tie;
@@ -13,7 +12,6 @@ public class GameData implements Serializable {
     private ArrayList<Integer> p1Moves, p2Moves;
 
     public GameData(GameData gd) {
-        this.playerName = gd.getPlayer();
         this.board = gd.getBoard();
         this.move = gd.getMove();
         this.isEnd = gd.isEnd();
@@ -24,8 +22,7 @@ public class GameData implements Serializable {
         this.p2Moves = gd.getP2Moves();
     }
 
-    public GameData(String p, int[][] b, GameMove m, boolean e, boolean t, boolean o, int n, ArrayList<Integer> p1, ArrayList<Integer> p2) {
-        this.playerName = p;
+    public GameData(int[][] b, GameMove m, boolean e, boolean t, boolean o, int n, ArrayList<Integer> p1, ArrayList<Integer> p2) {
         this.board = b;
         this.move = m;
         this.isEnd = e;
@@ -36,8 +33,7 @@ public class GameData implements Serializable {
         this.p2Moves = p2;
     }
 
-    public GameData(String p, int[][] b, GameMove m, boolean e, boolean t, boolean o, int n) {
-        this.playerName = p;
+    public GameData(int[][] b, GameMove m, boolean e, boolean t, boolean o, int n) {
         this.board = b;
         this.move = m;
         this.isEnd = e;
@@ -55,8 +51,16 @@ public class GameData implements Serializable {
         }
     }
 
-    public String getPlayer() { return this.playerName; }
-    public void setPlayer(String p) { this.playerName = p; }
+    public GameData() {
+        this.board = new int[3][3];
+        this.move = null;
+        this.isEnd = false;
+        this.p1Turn = true;
+        this.p1Odd = true;
+        this.numMoves = 0;
+        this.p1Moves = new ArrayList<>(Arrays.asList(1, 3, 5, 7, 9));
+        this.p2Moves = new ArrayList<>(Arrays.asList(2, 4, 6, 8));
+    }
 
     public int[][] getBoard() { return this.board; }
     public void setBoard(int[][] b) { this.board = b; }
@@ -77,7 +81,10 @@ public class GameData implements Serializable {
 
     public boolean isTie() { return this.tie; }
     public void setTie(boolean b) { this.tie = b; }
-    public void tieGame() { this.tie = true; }
+    public void tieGame() {
+        this.isEnd = true;
+        this.tie = true;
+    }
 
     public int getNumberOfMoves() { return this.numMoves; }
     public void setNumberOfMoves(int n) { this.numMoves = n; }
@@ -98,9 +105,11 @@ public class GameData implements Serializable {
     }
     
     public String toString() {
-        return "Player: " + this.playerName + "\n"
-                + "Move: " + this.move.toString() + "\n"
-                + "Number of Moves: " + this.numMoves + "\n\n"
-                + GameUtils.printBoard(this.board) + "\n";
+        String rep = "";
+
+        if (this.move != null) { rep += "Move: " + this.move.toString() + "\n"; }
+        rep += "Number of Moves: " + this.numMoves + "\n\n"
+               + GameUtils.printBoard(this.board) + "\n";
+        return rep;
     }
 }

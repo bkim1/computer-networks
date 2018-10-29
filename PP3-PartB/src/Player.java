@@ -24,42 +24,39 @@ public class Player {
 
         socket = new Socket(serverAddress, port);
 
-        System.out.println("Enter player name: ");
-        String playerName = fromKeyboard.readLine();
-
         GameData toReceive, toSend;
         boolean won;
         gu = new GameUtils();
 
-        toSend = new GameData(playerName, new int[3][3], new GameMove(0, 0, 0), false, true, true, 0);
-
-        toSend = getInput(toSend);
-        
-        Player.sendData(toSend);
         try {
             while (true) {
+                System.out.println("Waiting to receive something...");
                 toReceive = getData();
                 
+                if (toReceive == null) { continue; }
                 if (toReceive.isEnd()) {
-                    toSend = restartGame(toReceive.isTie(), false, toReceive);
-                    if (toSend != null) { 
-                        toSend = getInput(toSend);
-                        Player.sendData(toSend);
-                        continue;
-                    } 
-                    else { break; }
+                    if (toReceive.isTie()) {
+                        System.out.println("It's a tie! Like that would ever happen...");
+                    }
+                    else {
+                        System.out.println("You lost! Ya hate to see it!");
+                    }
+                    break; 
                 }
                 toSend = getInput(toReceive);  // Get player input
 
                 // Check for win!
                 won = gu.checkForWin(toSend);
                 if (won || toSend.isTie()) {
-                    if (won && toSend.isTie()) { toSend.setTie(false); }
+                    if (won) { 
+                        System.out.println("You won! Congrats!");
+                    }
+                    else {
+                        System.out.println("It's a tie! Like that would ever happen...");
+                    }
                     toSend.gameOver();
                     Player.sendData(toSend);
-                    toSend = restartGame(toSend.isTie(), true, toSend);
-
-                    if (toSend == null) { break; }
+                    break;
                 }
                 Player.sendData(toSend);
             }
@@ -69,31 +66,6 @@ public class Player {
         Player.sendData(null);
         System.out.println("Closing out the socket!");
         socket.close();
-    }
-
-    private static GameData restartGame(boolean tie, boolean won, GameData oldGame) throws IOException {
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        String ans;
-        if (tie) { System.out.println("It's a tie! Like that would ever happen..."); }
-        else if (won) { System.out.println("You won! Congrats!"); }
-        else { System.out.println("You lost! Ya hate to see it!"); }
-        
-        System.out.println("Want to play another? (Y/N) ");
-        ans = input.readLine();
-
-        while (!"Y".equals(ans.toUpperCase()) && !"N".equals(ans.toUpperCase())) {
-            System.out.println("Gotta use 'Y' or 'N'...");
-
-            System.out.println("Want to play another? (Y/N) ");
-            ans = input.readLine();
-        }
-        GameData data = null;
-        if ("Y".equals(ans.toUpperCase())) {
-            System.out.println("Ok! Restarting the game...");
-            System.out.println("You're now playing with the opposite numbers!");
-            data = getInput(new GameData(oldGame.getPlayer(), new int[3][3], new GameMove(0, 0, 0), false, true, !oldGame.isP1Odd(), 0));
-        }
-        return data;
     }
 
     private static GameData getInput(GameData toSend) throws IOException {

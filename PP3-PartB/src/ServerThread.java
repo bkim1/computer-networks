@@ -1,63 +1,61 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 public class ServerThread implements Runnable {
-	Socket socket;
-	InputStream recvStream;
-	OutputStream sendStream;
-	String request;
+	private Socket socket;
+	private InputStream recvStream;
+	private OutputStream sendStream;
+    private GameController controller;
 
-	// protected DatagramSocket socket = null;
-	protected BufferedReader in = null;
-	protected boolean moreQuotes = true;
-
-	public ServerThread(Socket clntSock) throws IOException {
+	public ServerThread(Socket clntSock, GameController c) throws IOException {
 		this.socket = clntSock;
 		this.sendStream = clntSock.getOutputStream();
-		this.recvStream = clntSock.getInputStream();
+        this.recvStream = clntSock.getInputStream();
+        this.controller = c;
 	}
 
 	public void run() {
-        GameUtils gu = new GameUtils();
         GameData toReceive, toSend;
-        ArrayList<Integer> availableMoves;
-        boolean won;
+        boolean isPlayer1 = false;
 
         System.out.println(Thread.currentThread().getName() + " is running...");
+
+        System.out.println("Waiting for other player...");
         try {
+            isPlayer1 = this.controller.startGame();
+        } catch (InterruptedException e) { }
+        System.out.println(Thread.currentThread().getName() + ": Found the other player!");
+
+        try {
+            // Start of the game
+            System.out.println(Thread.currentThread().getName() + ": Waiting for game data");
+            while ((toSend = this.controller.getGameData(isPlayer1)) == null) {
+                System.out.println(Thread.currentThread().getName() + ": sleeping!");
+                Thread.sleep(5000); 
+            }
+            System.out.println(Thread.currentThread().getName() + ": Got the game data!\n" + toSend.toString());
+            sendData(toSend);
+            
+            System.out.println(Thread.currentThread().getName() + ": Sent game data!");
             while (true) {
-                toReceive = getData();
-
-                if (toReceive == null) { break; }
-                if (toReceive.isEnd()) {
-                    if (toReceive.isTie()) { System.out.println("It's a tie..."); }
-                    else { System.out.println("Welp we lost..."); }
-                    System.out.println("Waiting on the player to play again...");
-                    continue;
-                }
-                System.out.println("Game Data:\n" + toReceive.toString());
-
-                if (toReceive.isP1Turn()) { availableMoves = toReceive.getP1Moves(); }
-                else { availableMoves = toReceive.getP2Moves(); }
-                toSend = gu.applyMove(toReceive, getRandomMove(availableMoves));
-                while (toSend == null) {
-                    toSend = gu.applyMove(toReceive, getRandomMove(availableMoves));
-                }
+                System.out.println("\n" + Thread.currentThread().getName() + ": Waiting on client to get data");
+                toReceive = getPlayerData();
+                System.out.println(Thread.currentThread().getName() + ": received data\n" + toReceive);
                 
-                won = gu.checkForWin(toSend);
-                if (won || toSend.isTie()) {
-                    if (won && toSend.isTie()) { toSend.setTie(false); }
-                    toSend.gameOver();
-                }
+                if (toReceive == null) { break; }
 
+                this.controller.setMove(toReceive);
+
+                if (toReceive.isEnd()) { break; }
+                toSend = this.controller.getGameData(isPlayer1);
                 sendData(toSend);
             }
-        } catch (ClassNotFoundException | IOException e) {
+        } catch (ClassNotFoundException | IOException | InterruptedException e) {
+            System.err.println(Thread.currentThread().getName() + ": Error!");
             e.printStackTrace();
         }
 
-        System.out.println("Closing out server!");
+        System.out.println("Closing out game!");
         try {
 			this.socket.close();
 		} catch (IOException e) {
@@ -65,16 +63,7 @@ public class ServerThread implements Runnable {
 		}
     }
 
-    private GameMove getRandomMove(ArrayList<Integer> availableMoves) {
-        Random r = new Random();
-        int row = r.nextInt(3);
-        int col = r.nextInt(3);
-        int move = availableMoves.get(r.nextInt(availableMoves.size()));
-        System.out.println("Trying: (" + row + ", " + col + ", " + move + ")");
-        return new GameMove(row, col, move);
-    }
-    
-    private GameData getData() throws IOException, ClassNotFoundException {
+    private GameData getPlayerData() throws IOException, ClassNotFoundException {
     	GameData toReceive = null;
         ObjectInputStream ois = new ObjectInputStream(this.recvStream);  
         toReceive = (GameData) ois.readObject();
