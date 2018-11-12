@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,7 +14,9 @@ public class Server {
         final int WINDOW_SIZE = 5;
 		Packet receivedSerializedData, serializedPacket;
         BufferedReader fromKeyboard = new BufferedReader(new InputStreamReader(System.in));
-        String file = LocalDateTime.now().toString() + "-output.txt";
+        String fileName = LocalDateTime.now().toString() + "-output.txt";
+        File file = new File(fileName);
+        file.createNewFile();
         BufferedWriter fileWriter = new BufferedWriter(new FileWriter(file));
 
         // Setup Window
