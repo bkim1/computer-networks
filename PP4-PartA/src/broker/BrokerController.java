@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import serializedData.PeerInfo;
+import serializedData.Action;
 
 public class BrokerController {
     private HashMap<String, ArrayList<PeerInfo>> peers;
@@ -12,14 +13,17 @@ public class BrokerController {
         this.peers = new HashMap<>();
     }
 
-    public synchronized PeerInfo searchFiles(String file) {
-        if (this.peers.containsKey(file)) {
-            return this.peers.get(file).get(0);
+    public synchronized PeerInfo searchFiles(PeerInfo p) {
+        if (this.peers.containsKey(p.getFileName())) {
+            PeerInfo returnData = this.peers.get(p.getFileName()).get(0);
+            returnData.setAction(Action.SEARCH_OK);
+            System.out.println("Successfully found file!");
+            return returnData;
         }
-        return null;
+        return new PeerInfo(p, Action.SEARCH_FAIL);
     }
 
-    public synchronized void registerFile(PeerInfo p) {
+    public synchronized PeerInfo registerFile(PeerInfo p) {
         ArrayList<PeerInfo> list;
         if (this.peers.containsKey(p.getFileName())) {
             list = this.peers.get(p.getFileName());
@@ -29,13 +33,27 @@ public class BrokerController {
         }
         list.add(p);
         this.peers.put(p.getFileName(), list);
+        System.out.println("Successfully registered file!");
+        System.out.println(this.peers);
+        return new PeerInfo(p, Action.REG_OK);
     }
 
-    public synchronized void unregisterFile(PeerInfo p) {
+    public synchronized PeerInfo unregisterFile(PeerInfo p) {
         if (this.peers.containsKey(p.getFileName())) {
             ArrayList<PeerInfo> list = this.peers.get(p.getFileName());
-            list.remove(p);
-            this.peers.put(p.getFileName(), list);
+
+            for (PeerInfo info : list) {
+                if (p.isEqual(info)) {
+                    list.remove(info);
+                    break;
+                }
+            }
+            if (list.size() == 0) { this.peers.remove(p.getFileName()); }
+            else { this.peers.put(p.getFileName(), list); }
+
+            System.out.println("Successfully unregistered file!");
+            return new PeerInfo(p, Action.UNREG_OK);
         }
+        return new PeerInfo(p, Action.UNREG_FAIL);
     }
 }

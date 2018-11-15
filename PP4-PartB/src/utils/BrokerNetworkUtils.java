@@ -12,7 +12,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
-import serializedData.PeerInfo;
+import serializedData.*;
 
 public class BrokerNetworkUtils {
     private static final int PACKET_MAX = 512; // Maximum size of game datagram packet payload
