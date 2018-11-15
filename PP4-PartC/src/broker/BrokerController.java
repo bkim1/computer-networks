@@ -2,12 +2,14 @@ package broker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.PriorityQueue;
 
 import serializedData.*;
 
 public class BrokerController {
-    private HashMap<String, ArrayList<PeerInfo>> registeredFiles;
-    private HashMap<Integer, Integer> peers;
+    private Map<String, PriorityQueue<Peer>> registeredFiles;
+    private Map<Integer, Peer> peers;
 
     public BrokerController() {
         this.registeredFiles = new HashMap<>();
@@ -15,14 +17,15 @@ public class BrokerController {
     }
 
     public synchronized PeerInfo searchFiles(PeerInfo p) {
+        System.out.println("Peers: " + this.peers);
         if (!this.peers.containsKey(p.getUserID()) ||
-                (this.peers.containsKey(p.getUserID()) && this.peers.get(p.getUserID()) < 2)) {
+                (this.peers.get(p.getUserID()).getFiles().size() < 2)) {
             return new PeerInfo(p, Result.SEARCH_NO_FREE_RIDE);
         }
 
         if (this.registeredFiles.containsKey(p.getFileName())) {
-            PeerInfo returnData = this.registeredFiles.get(p.getFileName()).get(0);
-            returnData.setResult(Result.SEARCH_OK);
+            Peer peer = this.registeredFiles.get(p.getFileName()).peek();
+            PeerInfo returnData = this.constructPeerInfo(peer, p.getFileName(), Result.SEARCH_OK);
             System.out.println("Successfully found file!");
             return returnData;
         }
@@ -30,49 +33,90 @@ public class BrokerController {
     }
 
     public synchronized PeerInfo registerFile(PeerInfo p) {
-        ArrayList<PeerInfo> list;
+        PriorityQueue<Peer> pq;
         if (this.registeredFiles.containsKey(p.getFileName())) {
-            list = this.registeredFiles.get(p.getFileName());
+            pq = this.registeredFiles.get(p.getFileName());
         }
         else {
-            list = new ArrayList<>();
+            pq = new PriorityQueue<>();
         }
-        list.add(p);
-        this.registeredFiles.put(p.getFileName(), list);
+        Peer peer;
+        if (this.peers.containsKey(p.getUserID())) {
+            peer = this.peers.get(p.getUserID());
+        }
+        else {
+            peer = new Peer(p.getUserID(), 10, p.getPort(), p.getIP(), new ArrayList<>());
+        }
+        peer.addFile(p.getFileName());
+        pq.add(peer);
+
+        this.peers.put(p.getUserID(), peer);
+        this.registeredFiles.put(p.getFileName(), pq);
         System.out.println("Successfully registered file!");
         System.out.println(this.registeredFiles);
 
-        if (this.peers.containsKey(p.getUserID())) {
-            int count = this.peers.get(p.getUserID());
-            this.peers.put(p.getUserID(), ++count);
-        }
-        else {
-            this.peers.put(p.getUserID(), 1);
-        }
-
-        return new PeerInfo(p, Result.REG_OK);
+        return this.constructPeerInfo(peer, p.getFileName(), Result.REG_OK);
     }
 
     public synchronized PeerInfo unregisterFile(PeerInfo p) {
-        if (this.registeredFiles.containsKey(p.getFileName()) && this.peers.containsKey(p.getUserID())) {
-            ArrayList<PeerInfo> list = this.registeredFiles.get(p.getFileName());
-
-            for (PeerInfo info : list) {
-                if (p.equals(info)) {
-                    list.remove(info);
+        if (this.peers.containsKey(p.getUserID())) {
+            PriorityQueue<Peer> pq = this.registeredFiles.get(p.getFileName());
+            Peer peer = this.peers.get(p.getUserID());
+            for (Peer otherPeer : pq) {
+                if (peer.equals(otherPeer)) {
+                    pq.remove(otherPeer);
                     break;
                 }
             }
-            if (list.size() == 0) { this.registeredFiles.remove(p.getFileName()); }
-            else { this.registeredFiles.put(p.getFileName(), list); }
+            if (pq.size() == 0) { this.registeredFiles.remove(p.getFileName()); }
+            else { this.registeredFiles.put(p.getFileName(), pq); }
 
             System.out.println("Successfully unregistered file!");
 
-            int count = this.peers.get(p.getUserID());
-            this.peers.put(p.getUserID(), --count);
+            peer.removeFile(p.getFileName());
+            this.peers.put(p.getUserID(), peer);
 
-            return new PeerInfo(p, Result.UNREG_OK);
+            return this.constructPeerInfo(peer, p.getFileName(), Result.UNREG_OK);
         }
         return new PeerInfo(p, Result.UNREG_FAIL);
+    }
+
+    public synchronized PeerInfo adjustRanking(PeerInfo p) {
+        if (this.peers.containsKey(p.getPeerID())) {
+            Peer peer = this.peers.get(p.getPeerID());
+            peer.decrementRank();
+            this.peers.put(p.getPeerID(), peer);
+            return this.constructPeerInfo(peer, Result.ADJUST_RANK_OK);
+        }
+        return new PeerInfo(p, Result.ADJUST_RANK_FAIL);
+    }
+
+    private PeerInfo constructPeerInfo(Peer p, Result r) {
+        PeerInfo returnData = new PeerInfo();
+        returnData.setIP(p.getAddress());
+        returnData.setPeerID(p.getUserID());
+        returnData.setPort(p.getPort());
+        returnData.setResult(r);
+
+        if (r == Result.REG_OK || r == Result.UNREG_OK) {
+            returnData.setUserID(p.getUserID());
+        }
+
+        return returnData;
+    }
+
+    private PeerInfo constructPeerInfo(Peer p, String fileName, Result r) {
+        PeerInfo returnData = new PeerInfo();
+        returnData.setIP(p.getAddress());
+        returnData.setPeerID(p.getUserID());
+        returnData.setPort(p.getPort());
+        returnData.setFileName(fileName);
+        returnData.setResult(r);
+
+        if (r == Result.REG_OK || r == Result.UNREG_OK) {
+            returnData.setUserID(p.getUserID());
+        }
+
+        return returnData;
     }
 }

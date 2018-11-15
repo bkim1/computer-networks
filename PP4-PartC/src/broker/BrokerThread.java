@@ -48,6 +48,10 @@ public class BrokerThread implements Runnable {
                 returnData = this.controller.unregisterFile(this.data);
                 break;
 
+            case BAD_PEER:
+                returnData = this.controller.adjustRanking(this.data);
+                break;
+
             default:
                 returnData = new PeerInfo(this.data, Result.UNKWN);
                 break;

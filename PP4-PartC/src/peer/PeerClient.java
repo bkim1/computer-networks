@@ -14,15 +14,17 @@ import utils.PeerToBrokerUtils;;
 public class PeerClient {
     static Map<String, PeerInfo> registeredFiles;
     static Map<String, Thread> serverThreads;
+    static InetAddress serverAddress;
+    static int serverPort;
 
     public static void main(String[] args) throws UnknownHostException, IOException {
         InetAddress serverAddress;
-        int port;
+        int serverPort;
         BufferedReader fromKeyboard = new BufferedReader(new InputStreamReader(System.in));
 
         if (args.length > 0) {
             serverAddress = InetAddress.getByName(args[0]);
-            port = Integer.parseInt(args[1]);
+            serverPort = Integer.parseInt(args[1]);
         }
         else {
             // Get connection info
@@ -31,14 +33,10 @@ public class PeerClient {
             serverAddress = InetAddress.getByName(ip);
             
             System.out.println("Enter Port # of Broker: ");
-            port = Integer.parseInt(fromKeyboard.readLine());
+            serverPort = Integer.parseInt(fromKeyboard.readLine());
         }
 
-        // System.out.println("Enter a username: ");
-        // String username = fromKeyboard.readLine();
-        // Peer mePeer = new Peer(username, InetAddress.getLocalHost());
-
-        PeerToBrokerUtils pbu = new PeerToBrokerUtils(serverAddress, port);
+        PeerToBrokerUtils pbu = new PeerToBrokerUtils(serverAddress, serverPort);
         pbu.createClientSocket();
 
         registeredFiles = new HashMap<>();
@@ -54,6 +52,8 @@ public class PeerClient {
                 System.out.println(sendInfo);
                 pbu.sendSerializedPacket(sendInfo);
                 rcvInfo = pbu.getSerializedPacket();
+
+                System.out.println("Receiving: \n" + rcvInfo + "\n");
 
                 if (rcvInfo == null) { continue; }
                 processResponse(rcvInfo);
@@ -86,7 +86,7 @@ public class PeerClient {
                 
                 // Spawn up new PeerRcvThread
                 try {
-                    PeerRcvThread rcvThread = new PeerRcvThread(resp);
+                    PeerRcvThread rcvThread = new PeerRcvThread(resp, serverAddress, serverPort);
                     Thread rThread = new Thread(rcvThread);
                     rThread.start();
                 } catch (IOException e) {
@@ -114,6 +114,11 @@ public class PeerClient {
                 System.out.println("UNREG FAIL: Something went wrong with the broker...\n" +
                                    "Sorry you'll have to try again :(\n");
                 break;
+            case ADJUST_RANK_OK:
+                System.out.println("ADJUST RANK OK: Successfully adjusted the rankings!");
+                break;
+            case ADJUST_RANK_FAIL:
+                System.out.println("ADJUST RANK FAIL: Something went wrong with the adjustment");
             default:
                 break;
         }

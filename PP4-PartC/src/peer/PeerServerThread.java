@@ -1,8 +1,13 @@
 package peer;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import serializedData.Action;
+import serializedData.PeerInfo;
+import utils.PeerToBrokerUtils;
 
 public class PeerServerThread implements Runnable {
 	private int port;
@@ -35,7 +40,7 @@ public class PeerServerThread implements Runnable {
 			serverSocket.close();
 		} catch (IOException e) {
 			System.err.println("Could not listen on port: " + this.port);
-			System.exit(-1);
+			return;
 		}
 	}
 	

@@ -5,20 +5,26 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.time.LocalDateTime;
 
 import serializedData.*;
+import utils.PeerToBrokerUtils;
 
 public class PeerRcvThread implements Runnable {
     private PeerInfo peerInfo;
     private Socket peerSocket;
     private InputStream inputStream;
+    private InetAddress serverAddress;
+    private int serverPort;
 
-    public PeerRcvThread(PeerInfo p) throws IOException {
+    public PeerRcvThread(PeerInfo p, InetAddress server, int port) throws IOException {
         this.peerInfo = p;
         this.peerSocket = new Socket(this.peerInfo.getIP(), this.peerInfo.getPort());
         this.inputStream = this.peerSocket.getInputStream();
+        this.serverAddress = server;
+        this.serverPort = port;
     }
 
     public void run() {
@@ -63,7 +69,22 @@ public class PeerRcvThread implements Runnable {
             writer.close();
             this.peerSocket.close();
 		} catch (IOException ex) {
-			System.err.println("IOException in getRequest");
+            System.err.println("IOException in getRequest");
+            PeerToBrokerUtils pbu = new PeerToBrokerUtils(this.serverAddress, this.serverPort);
+            PeerInfo sendInfo = new PeerInfo(Action.BAD_PEER, this.peerInfo.getPeerID());
+            PeerInfo rcvInfo;
+            pbu.createClientSocket();
+            try {
+                pbu.sendSerializedPacket(sendInfo);
+                rcvInfo = pbu.getSerializedPacket();
+
+                if (rcvInfo.getResult() == Result.ADJUST_RANK_OK) {
+                    pbu.closeSocket();
+                    this.peerSocket.close();
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -8,20 +8,19 @@ public class PeerInfo implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private InetAddress ip;
-    private int port, userId;
+    private int port, userId, peerId;
     private String fileName;
     private Action action;
     private Result result;
-    // private Peer peer;
 
-    public PeerInfo(InetAddress i, int p, String f, Action a, Result r, int u) {
+    public PeerInfo(InetAddress i, int p, String f, Action a, Result r, int u, int pId) {
         this.ip = i;
         this.port = p;
         this.fileName = f;
         this.action = a;
         this.result = r;
         this.userId = u;
-        // this.peer = peer;
+        this.peerId = pId;
     }
 
     public PeerInfo(PeerInfo p, Action a) {
@@ -30,7 +29,7 @@ public class PeerInfo implements Serializable {
         this.fileName = p.getFileName();
         this.result = p.getResult();
         this.userId = p.getUserID();
-        // this.peer = p.getPeer();
+        this.peerId = p.getPeerID();
         this.action = a;
     }
 
@@ -39,8 +38,8 @@ public class PeerInfo implements Serializable {
         this.port = p.getPort();
         this.fileName = p.getFileName();
         this.action = p.getAction();
-        // this.peer = p.getPeer();
         this.userId = p.getUserID();
+        this.peerId = p.getPeerID();
         this.result = r;
     }
 
@@ -50,8 +49,13 @@ public class PeerInfo implements Serializable {
         this.fileName = p.getFileName();
         this.action = p.getAction();
         this.result = p.getResult();
-        // this.peer = p.getPeer();
         this.userId = p.getUserID();
+        this.peerId = p.getPeerID();
+    }
+
+    public PeerInfo(Action a, int p) {
+        this.action = a;
+        this.peerId = p;
     }
 
     public PeerInfo(Action a) {
@@ -60,6 +64,8 @@ public class PeerInfo implements Serializable {
         this.port = 0;
         this.action = a;
     }
+
+    public PeerInfo() {}
 
     public Action getAction() { return this.action; }
     public void setAction(Action a) { this.action = a; }
@@ -76,17 +82,16 @@ public class PeerInfo implements Serializable {
     public String getFileName() { return this.fileName; }
     public void setFileName(String f) { this.fileName = f; }
 
-    // public Peer getPeer() { return this.peer; }
-    // public void setPeer(Peer p) { this.peer = p; }
-
     public int getUserID() { return this.userId; }
     public void setUserID(int u) { this.userId = u; }
+
+    public int getPeerID() { return this.peerId; }
+    public void setPeerID(int p) { this.peerId = p; }
 
     public boolean equals(PeerInfo other) {
         boolean ipEqual = this.ip.getHostAddress().equals(other.getIP().getHostAddress());
         boolean portEqual = this.port == other.getPort();
         boolean fileEqual = this.fileName.equals(other.getFileName());
-        // boolean peerEqual = this.peer.equals(other.getPeer());
         boolean userIdEqual = this.userId == other.getUserID();
 
         return ipEqual && portEqual && fileEqual && userIdEqual;
@@ -98,6 +103,7 @@ public class PeerInfo implements Serializable {
                "File: " + this.fileName + "\n" +
                "Action: " + this.action + "\n" +
                "Result: " + this.result + "\n" +
-               "userId: " + this.userId;
+               "User ID: " + this.userId + "\n" +
+               "Peer ID: " + this.peerId + "\n";
     }
 }
