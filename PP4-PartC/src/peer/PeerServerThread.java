@@ -1,13 +1,8 @@
 package peer;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import serializedData.Action;
-import serializedData.PeerInfo;
-import utils.PeerToBrokerUtils;
 
 public class PeerServerThread implements Runnable {
 	private int port;
@@ -19,12 +14,11 @@ public class PeerServerThread implements Runnable {
 	}
 
     public void run() {
-    	ServerSocket serverSocket = null;
-
+		ServerSocket serverSocket = null;
 		try {
 			serverSocket = new ServerSocket(this.port);
 
-			System.out.println(Thread.currentThread().getName() + ": Peer file transfer is up and running.....");
+			System.out.println(Thread.currentThread().getName() + ": Peer file transfer is up and running on port " + this.port + "...");
 			try {
 				while (!Thread.currentThread().isInterrupted()) {
 					System.out.println(Thread.currentThread().getName() + ": Waiting for someone to want the file...");
@@ -40,6 +34,7 @@ public class PeerServerThread implements Runnable {
 			serverSocket.close();
 		} catch (IOException e) {
 			System.err.println("Could not listen on port: " + this.port);
+			e.printStackTrace();
 			return;
 		}
 	}

@@ -1,19 +1,17 @@
 package serializedData;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 
 public class Peer implements Comparable<Peer> {
-    private int userId, port, rank;
+    private int userId, rank;
     private InetAddress address;
-    private ArrayList<String> files;
-    
+    private HashMap<String, Integer> files;
 
-    public Peer(int u, int r, int p, InetAddress a, ArrayList<String> f) {
+    public Peer(int u, int r, InetAddress a, HashMap<String, Integer> f) {
         this.userId = u;
         this.rank = r;
-        this.port = p;
         this.address = a;
         this.files = f;
     }
@@ -23,18 +21,16 @@ public class Peer implements Comparable<Peer> {
 
     public int getRank() { return this.rank; }
     public void setRank(int r) { this.rank = r; }
-    public void decrementRank() { this.rank--; }
-
-    public int getPort() { return this.port; }
-    public void setPort(int p) { this.port = p; }
+    public void decrementRank() { this.rank++; }
 
     public InetAddress getAddress() { return this.address; }
     public void setAddress(InetAddress i) { this.address = i; }
 
-    public ArrayList<String> getFiles() { return this.files; }
-    public void setFiles(ArrayList<String> f) { this.files = f; }
-    public void addFile(String f) { this.files.add(f); }
+    public HashMap<String, Integer> getFiles() { return this.files; }
+    public void setFiles(HashMap<String, Integer> f) { this.files = f; }
+    public void addFile(String f, int port) { this.files.put(f, port); }
     public void removeFile(String f) { this.files.remove(f); }
+    public int getPort(String f) { return this.files.get(f); }
 
     public boolean equals(Peer other) {
         return this.userId == other.getUserID() &&
@@ -46,9 +42,9 @@ public class Peer implements Comparable<Peer> {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(this.userId, this.port, this.address, this.rank); }
+    public int hashCode() { return Objects.hash(this.userId, this.address, this.rank); }
 
     public String toString() {
-        return "[" + this.userId + " : " + this.address.getHostAddress();
+        return "[" + this.userId + " : " + this.address.getHostAddress() + " : " + this.rank + "]";
     }
 }

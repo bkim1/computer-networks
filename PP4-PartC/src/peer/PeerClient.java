@@ -12,6 +12,7 @@ import serializedData.*;
 import utils.PeerToBrokerUtils;;
 
 public class PeerClient {
+    static PeerToBrokerUtils pbu;
     static Map<String, PeerInfo> registeredFiles;
     static Map<String, Thread> serverThreads;
     static InetAddress serverAddress;
@@ -19,7 +20,7 @@ public class PeerClient {
 
     public static void main(String[] args) throws UnknownHostException, IOException {
         InetAddress serverAddress;
-        int serverPort;
+        int serverPort, userId;
         BufferedReader fromKeyboard = new BufferedReader(new InputStreamReader(System.in));
 
         if (args.length > 0) {
@@ -36,7 +37,7 @@ public class PeerClient {
             serverPort = Integer.parseInt(fromKeyboard.readLine());
         }
 
-        PeerToBrokerUtils pbu = new PeerToBrokerUtils(serverAddress, serverPort);
+        pbu = new PeerToBrokerUtils(serverAddress, serverPort);
         pbu.createClientSocket();
 
         registeredFiles = new HashMap<>();
@@ -44,14 +45,17 @@ public class PeerClient {
 
         PeerInfo rcvInfo = null;
         PeerInfo sendInfo = null;
+        userId = -1;
 
         try {
             while (true) {
-                if (rcvInfo == null) { sendInfo = getInput(-1); }
-                else { sendInfo = getInput(rcvInfo.getUserID()); }
+                sendInfo = getInput(userId);
+
                 System.out.println(sendInfo);
                 pbu.sendSerializedPacket(sendInfo);
                 rcvInfo = pbu.getSerializedPacket();
+
+                if (userId == -1 && rcvInfo.getUserID() != 0) { userId = rcvInfo.getUserID(); }
 
                 System.out.println("Receiving: \n" + rcvInfo + "\n");
 
@@ -63,7 +67,7 @@ public class PeerClient {
         }
     }
 
-    private static void processResponse(PeerInfo resp) {
+    private static void processResponse(PeerInfo resp) throws IOException, ClassNotFoundException {
         switch(resp.getResult()) {
             case REG_OK:
                 System.out.println("REG OK: Successfully registered the file!\n");
@@ -91,6 +95,20 @@ public class PeerClient {
                     rThread.start();
                 } catch (IOException e) {
                     System.out.println("Problem connecting with the other peer!");
+                    PeerInfo peerInfo = new PeerInfo(resp);
+                    peerInfo.setAction(Action.BAD_PEER);
+                    pbu.sendSerializedPacket(peerInfo);
+                    PeerInfo rcvInfo = pbu.getSerializedPacket();
+
+                    if (rcvInfo.getResult() == Result.ADJUST_RANK_OK) {
+                        System.out.println("ADJUST RANK OK: Successfully adjusted the rank");
+                    }
+                    else if (rcvInfo.getResult() == Result.ADJUST_RANK_FAIL) {
+                        System.out.println("ADJUST RANK FAIL: Something went wrong");
+                    }
+                    else {
+                        System.out.println("ADJUST RANK: Tried adjusting the rank but something else was returned");
+                    }
                 }
                 break;
             case SEARCH_FAIL:
@@ -108,6 +126,7 @@ public class PeerClient {
 
                 // Close that thread
                 Thread closeThread = serverThreads.get(resp.getFileName());
+                System.out.println("Interrupting: " + closeThread.getName());
                 closeThread.interrupt();
                 break;
             case UNREG_FAIL:
@@ -172,6 +191,7 @@ public class PeerClient {
                     System.out.println("What file do you want to get?");
                     info.setFileName(input.readLine());
                     info.setUserID(userId);
+                    System.out.println("Setting userid to: " + userId);
                     break breakLabel;
                 default:
                     System.out.println("Invalid input. Please try again.");
