@@ -81,11 +81,4 @@ public class ClientController {
         this.window.set(seqNum, new Packet(line, seqNum, false));
         return true;
     }
-    
-    private void setupWindow() throws IOException {
-        String line = "";
-        for (int i = 0; i < WINDOW_SIZE && (line = this.fileReader.readLine()) != null; i++) {
-            this.window.set(i, new Packet(line, i, false));
-        } 
-    }
 }

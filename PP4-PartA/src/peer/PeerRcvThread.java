@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 import serializedData.*;
 
@@ -15,21 +14,17 @@ public class PeerRcvThread implements Runnable {
     private PeerInfo peerInfo;
     private Socket peerSocket;
     private InputStream inputStream;
-    private ArrayList<String> request;
 
     public PeerRcvThread(PeerInfo p) throws IOException {
         this.peerInfo = p;
         this.peerSocket = new Socket(this.peerInfo.getIP(), this.peerInfo.getPort());
         this.inputStream = this.peerSocket.getInputStream();
-        this.request = new ArrayList<>();
     }
 
     public void run() {
         try {
             System.out.println(Thread.currentThread().getName() + ": Requesting the file!");
             this.getRequestFile();
-            // System.out.println(Thread.currentThread().getName() + ": Got something!");
-            // this.sendRequestToFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -68,17 +63,5 @@ public class PeerRcvThread implements Runnable {
 		} catch (IOException ex) {
 			System.err.println("IOException in getRequest");
         }
-    }
-    
-    private void sendRequestToFile() throws IOException {
-        System.out.println(Thread.currentThread().getName() + ": writing to file\n");
-        String fileName = LocalDateTime.now().toString() + "-output.txt";
-        File outputFile = new File(fileName);
-        outputFile.createNewFile();
-
-        BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputFile));
-        
-        for (String line : this.request) { fileWriter.write(line); }
-        fileWriter.close();
     }
 }
