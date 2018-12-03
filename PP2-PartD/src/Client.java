@@ -6,15 +6,23 @@ import java.net.InetAddress;
 public class Client {
     public static void main(String[] args) throws IOException {
         BufferedReader fromKeyboard = new BufferedReader(new InputStreamReader(System.in));
-
-        // Get connection info
-        System.out.println("Enter IP Address: ");
-        String ip = fromKeyboard.readLine();
-        InetAddress serverAddress = InetAddress.getByName(ip);
+        InetAddress serverAddress;
+        int port;
         
-        System.out.println("Enter Port #: ");
-        int port = Integer.parseInt(fromKeyboard.readLine());
-        ClientNetworkUtils cnu = new ClientNetworkUtils(serverAddress, port);
+        if (args.length != 0) {
+        	serverAddress = InetAddress.getByName(args[0]);
+        	port = Integer.parseInt(args[1]);
+        }
+        else {
+        	// Get connection info
+        	System.out.println("Enter IP Address: ");
+        	String ip = fromKeyboard.readLine();
+        	serverAddress = InetAddress.getByName(ip);
+        	
+        	System.out.println("Enter Port #: ");
+        	port = Integer.parseInt(fromKeyboard.readLine());
+        }
+        ClientNetworkUtils cnu = new ClientNetworkUtils(serverAddress, port);        	
         cnu.createClientSocket();
         
         // Setup file to read from
@@ -26,8 +34,8 @@ public class Client {
         ClientSendThread sendThread = new ClientSendThread(controller, cnu);
         cnu.setController(controller);
 
-        Thread t0 = new Thread(ackThread);
-        Thread t1 = new Thread(sendThread);
+        Thread t0 = new Thread(ackThread, "ACK Thread");
+        Thread t1 = new Thread(sendThread, "SEND Thread");
 
         t0.start();
         t1.start();

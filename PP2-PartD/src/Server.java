@@ -26,8 +26,14 @@ public class Server {
         }
         int expectedPacket = 0;
         
-        System.out.println("Enter the port number: ");
-        int servPort = Integer.parseInt(fromKeyboard.readLine());
+        int servPort;
+        if (args.length != 0) {
+        	servPort = Integer.parseInt(args[0]);
+        }
+        else {
+        	System.out.println("Enter the port number: ");
+        	servPort = Integer.parseInt(fromKeyboard.readLine());        	
+        }
         
 		ServerNetworkUtils snu = new ServerNetworkUtils(servPort);
 		snu.createServerSocket();
@@ -78,6 +84,9 @@ public class Server {
                 fileWriter.write(receivedData + "\n");
                 prevLine = receivedData;
                 expectedPacket = (expectedPacket + 1) % WINDOW_SIZE;
+            }
+            else {
+            	System.out.println("Repeated line!");
             }
 			snu.sendSerializedPacket(serializedPacket);
         }
