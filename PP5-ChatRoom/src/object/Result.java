@@ -1,0 +1,7 @@
+package object;
+
+public enum Result {
+    LOGIN_OK, LOGIN_FAIL, LOGOUT_OK, LOGOUT_FAIL,
+    GET_ROOMS_OK, GET_ROOMS_FAIL, UNKWN, UNAUTH,
+    REG_OK, REG_FAIL
+}
